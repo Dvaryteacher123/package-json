@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - DVARY GAMES</title>
+    
+    <!-- Import Firebase SDKs -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js",
+                "firebase/analytics": "https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js",
+                "firebase/storage": "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"
+            }
+        }
+    </script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <!-- ============================================
+    AUTH PAGE CONTAINER
+    ============================================ -->
+    <div class="auth-page">
+        <!-- Back Button -->
+        <a href="index.html" class="auth-back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+        
+        <!-- Auth Card -->
+        <div class="auth-card">
+            <!-- Logo -->
+            <div class="auth-logo">
+                <i class="fas fa-gamepad"></i>
+                <span>DVARY</span> GAMES
+            </div>
+            
+            <h1 class="auth-title">Welcome Back!</h1>
+            <p class="auth-subtitle">Login to continue your gaming journey</p>
+            
+            <!-- ============================================
+            LOGIN FORM
+            ============================================ -->
+            <form id="loginForm" class="auth-form" autocomplete="off">
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label for="email">
+                        <i class="fas fa-envelope"></i> Email Address
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="Enter your email" 
+                        required 
+                        autocomplete="email"
+                    />
+                    <div class="form-error" id="emailError"></div>
+                </div>
+                
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <div class="password-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Enter your password" 
+                            required 
+                            autocomplete="current-password"
+                        />
+                        <button type="button" class="toggle-password" id="togglePassword" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-error" id="passwordError"></div>
+                </div>
+                
+                <!-- Remember Me & Forgot Password -->
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe" />
+                        <span class="checkmark"></span>
+                        Remember Me
+                    </label>
+                    <a href="#" class="forgot-password" id="forgotPassword">
+                        Forgot Password?
+                    </a>
+                </div>
+                
+                <!-- Login Button -->
+                <button type="submit" class="btn-primary auth-btn" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                
+                <!-- Loading State -->
+                <div class="auth-loading" id="authLoading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Logging in...</p>
+                </div>
+                
+                <!-- Error Message -->
+                <div class="auth-error" id="authError" style="display: none;"></div>
+                
+                <!-- Divider -->
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+                
+                <!-- Social Login -->
+                <div class="social-login">
+                    <button type="button" class="social-btn google-btn" id="googleLogin">
+                        <i class="fab fa-google"></i> Continue with Google
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Signup Link -->
+            <div class="auth-footer">
+                <p>
+                    Don't have an account? 
+                    <a href="signup.html" class="auth-link">Create Account</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+    FIREBASE + AUTH LOGIC
+    ============================================ -->
+    <script type="module">
+        // ============================================
+        // IMPORT FIREBASE SDKs
+        // ============================================
+        import { initializeApp } from "firebase/app";
+        import { getAnalytics } from "firebase/analytics";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
+            sendPasswordResetEmail,
+            setPersistence,
+            browserLocalPersistence,
+            browserSessionPersistence
+        } from "firebase/auth";
+        import { getFirestore } from "firebase/firestore";
+        import { getStorage } from "firebase/storage";
+
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmwASW4XXQ3O0AvsCM_r1WLlrUmGjYVxI",
+            authDomain: "dvary-9a7d0.firebaseapp.com",
+            projectId: "dvary-9a7d0",
+            storageBucket: "dvary-9a7d0.firebasestorage.app",
+            messagingSenderId: "107370806066",
+            appId: "1:107370806066:web:4c2ce1e6f7b6c32909f52b",
+            measurementId: "G-07361LFJEP"
+        };
+
+        // ============================================
+        // INITIALIZE FIREBASE
+        // ============================================
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        console.log('🔥 Firebase initialized successfully on login page!');
+
+        // ============================================
+        // DOM ELEMENTS
+        // ============================================
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const authLoading = document.getElementById('authLoading');
+        const authError = document.getElementById('authError');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+        const togglePassword = document.getElementById('togglePassword');
+        const rememberMe = document.getElementById('rememberMe');
+        const forgotPassword = document.getElementById('forgotPassword');
+        const googleLogin = document.getElementById('googleLogin');
+
+        // ============================================
+        // TOGGLE PASSWORD VISIBILITY
+        // ============================================
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePassword.querySelector('i').classList.toggle('fa-eye');
+            togglePassword.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+
+        // ============================================
+        // VALIDATE EMAIL
+        // ============================================
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // ============================================
+        // SHOW ERROR
+        // ============================================
+        function showError(message) {
+            authError.textContent = message;
+            authError.style.display = 'block';
+            setTimeout(() => {
+                authError.style.display = 'none';
+            }, 5000);
+        }
+
+        // ============================================
+        // SET LOADING STATE
+        // ============================================
+        function setLoading(isLoading) {
+            if (isLoading) {
+                loginBtn.style.display = 'none';
+                authLoading.style.display = 'block';
+                loginBtn.disabled = true;
+            } else {
+                loginBtn.style.display = 'flex';
+                authLoading.style.display = 'none';
+                loginBtn.disabled = false;
+            }
+        }
+
+        // ============================================
+        // LOGIN FUNCTION
+        // ============================================
+        async function loginUser(email, password) {
+            try {
+                // Set persistence based on Remember Me
+                await setPersistence(auth, rememberMe.checked ? browserLocalPersistence : browserSessionPersistence);
+                
+                // Sign in with email and password
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                console.log('✅ User logged in:', user.email);
+                
+                // Store user info in localStorage
+                localStorage.setItem('user', JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName || '',
+                    photoURL: user.photoURL || ''
+                }));
+                
+                // Redirect to home page
+                window.location.href = 'index.html';
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                let errorMessage = 'Login failed. Please try again.';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'No account found with this email.';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Incorrect password. Please try again.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email address.';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = 'This account has been disabled.';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Too many failed attempts. Please try again later.';
+                        break;
+                    default:
+                        errorMessage = error.message || 'Login failed. Please try again.';
+                }
+                
+                showError(errorMessage);
+                setLoading(false);
+            }
+        }
+
+        // ============================================
+        // GOOGLE LOGIN
+        // ============================================
+        async function loginWithGoogle() {
+            try {
+                setLoading(true);
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                
+                console.log('✅ User logged in with Google:', user.email);
+                
+                localStorage.setItem('user', JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName || '',
+                    photoURL: user.photoURL || ''
+                }));
+                
+                window.location.href = 'index.html';
+                
+            } catch (error) {
+                console.error('Google login error:', error);
+                showError('Google login failed. Please try again.');
+                setLoading(false);
+            }
+        }
+
+        // ============================================
+        // FORGOT PASSWORD
+        // ============================================
+        async function resetPassword() {
+            const email = emailInput.value.trim();
+            
+            if (!email || !validateEmail(email)) {
+                showError('Please enter a valid email address to reset your password.');
+                return;
+            }
+            
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert('Password reset email sent! Please check your inbox.');
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showError('Failed to send reset email. Please try again.');
+            }
+        }
+
+        // ============================================
+        // FORM SUBMISSION
+        // ============================================
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Clear previous errors
+            authError.style.display = 'none';
+            emailError.textContent = '';
+            passwordError.textContent = '';
+            
+            // Get values
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            // Validate
+            let hasError = false;
+            
+            if (!email) {
+                emailError.textContent = 'Email is required.';
+                hasError = true;
+            } else if (!validateEmail(email)) {
+                emailError.textContent = 'Please enter a valid email address.';
+                hasError = true;
+            }
+            
+            if (!password) {
+                passwordError.textContent = 'Password is required.';
+                hasError = true;
+            } else if (password.length < 6) {
+                passwordError.textContent = 'Password must be at least 6 characters.';
+                hasError = true;
+            }
+            
+            if (hasError) return;
+            
+            // Show loading
+            setLoading(true);
+            
+            // Attempt login
+            await loginUser(email, password);
+        });
+
+        // ============================================
+        // FORGOT PASSWORD CLICK
+        // ============================================
+        forgotPassword.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetPassword();
+        });
+
+        // ============================================
+        // GOOGLE LOGIN CLICK
+        // ============================================
+        googleLogin.addEventListener('click', () => {
+            loginWithGoogle();
+        });
+
+        // ============================================
+        // ENTER KEY SUPPORT
+        // ============================================
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loginForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        emailInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                passwordInput.focus();
+            }
+        });
+
+        // ============================================
+        // CHECK IF USER IS ALREADY LOGGED IN
+        // ============================================
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('⚠️ User already logged in:', user.email);
+                // Optional: Redirect to home
+                // window.location.href = 'index.html';
+            }
+        });
+
+        console.log('✅ Login page ready!');
+    </script>
+</body>
+</html>
