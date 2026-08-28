@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat - DVARY GAMES</title>
+    
+    <!-- Import Firebase SDKs -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js",
+                "firebase/analytics": "https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js",
+                "firebase/storage": "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"
+            }
+        }
+    </script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <!-- ============================================
+    HEADER
+    ============================================ -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="index.html">
+                    <i class="fas fa-gamepad"></i>
+                    <span>DVARY</span> GAMES
+                </a>
+            </div>
+            
+            <nav class="nav-links">
+                <a href="index.html"><i class="fas fa-home"></i> Home</a>
+                <a href="index.html#games"><i class="fas fa-gamepad"></i> Games</a>
+                <a href="chat.html" class="active"><i class="fas fa-comment-dots"></i> Chat</a>
+                <a href="setting.html"><i class="fas fa-cog"></i> Settings</a>
+                
+                <div id="authLinks">
+                    <a href="login.html" class="btn-login"><i class="fas fa-sign-in-alt"></i> Login</a>
+                    <a href="signup.html" class="btn-signup"><i class="fas fa-user-plus"></i> Sign Up</a>
+                </div>
+                
+                <div id="userLinks" style="display: none;">
+                    <a href="setting.html" class="profile-link">
+                        <img src="" alt="Profile" id="navProfilePic" class="nav-profile-pic" />
+                        <span id="navUsername">User</span>
+                    </a>
+                    <a href="#" id="logoutBtn" class="btn-logout"><i class="fas fa-sign-out-alt"></i></a>
+                </div>
+            </nav>
+            
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="index.html#games"><i class="fas fa-gamepad"></i> Games</a>
+            <a href="chat.html" class="active"><i class="fas fa-comment-dots"></i> Chat</a>
+            <a href="setting.html"><i class="fas fa-cog"></i> Settings</a>
+            
+            <div id="mobileAuthLinks">
+                <a href="login.html" class="btn-login"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="signup.html" class="btn-signup"><i class="fas fa-user-plus"></i> Sign Up</a>
+            </div>
+            
+            <div id="mobileUserLinks" style="display: none;">
+                <a href="#" id="mobileLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================
+    CHAT PAGE
+    ============================================ -->
+    <main class="chat-page">
+        <div class="chat-container">
+            <!-- ============================================
+            CHAT LIST (Left Side)
+            ============================================ -->
+            <div class="chat-list-container" id="chatListContainer">
+                <div class="chat-list-header">
+                    <h2><i class="fas fa-comment-dots"></i> Chats</h2>
+                    <button class="btn-primary btn-small" id="newChatBtn">
+                        <i class="fas fa-plus"></i> New Chat
+                    </button>
+                </div>
+                
+                <div class="chat-search">
+                    <input type="text" id="searchChats" placeholder="Search chats..." />
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div class="chat-list" id="chatList">
+                    <!-- Chats will be loaded here by chat.js -->
+                    <div class="loading-chats">
+                        <div class="spinner"></div>
+                        <p>Loading chats...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================
+            CONVERSATION (Right Side)
+            ============================================ -->
+            <div class="conversation-container" id="conversationContainer">
+                <!-- Empty State -->
+                <div class="conversation-empty" id="conversationEmpty">
+                    <i class="fas fa-comment-dots"></i>
+                    <h3>No chat selected</h3>
+                    <p>Select a chat or start a new conversation</p>
+                    <button class="btn-primary" id="newChatBtnEmpty">
+                        <i class="fas fa-plus"></i> New Chat
+                    </button>
+                </div>
+
+                <!-- Conversation Content -->
+                <div class="conversation-content" id="conversationContent" style="display: none;">
+                    <!-- Header -->
+                    <div class="conversation-header" id="conversationHeader">
+                        <button class="back-to-chats" id="backToChats">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <img src="" alt="User" id="chatProfilePic" />
+                        <div class="chat-user-info">
+                            <span id="chatUsername">User</span>
+                            <span class="chat-status" id="chatStatus">Offline</span>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="btn-icon" id="chatSettingsBtn" title="Chat Settings">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div class="messages-container" id="messagesContainer">
+                        <!-- Messages will be loaded here by chat.js -->
+                    </div>
+
+                    <!-- Message Input -->
+                    <div class="message-input-container">
+                        <button class="btn-icon" id="emojiBtn" title="Emoji">
+                            <i class="fas fa-smile"></i>
+                        </button>
+                        <button class="btn-icon" id="attachmentBtn" title="Attachment">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <input 
+                            type="text" 
+                            id="messageInput" 
+                            placeholder="Type a message..." 
+                            autocomplete="off"
+                        />
+                        <button class="btn-primary" id="sendMessageBtn">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================================
+    NEW CHAT MODAL
+    ============================================ -->
+    <div class="modal-overlay" id="newChatModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus"></i> New Chat</h2>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-users">
+                    <input type="text" id="searchUsersInput" placeholder="Search users by name or username..." />
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="users-list" id="usersList">
+                    <p class="search-hint">Type at least 2 characters to search</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="cancelModalBtn">Cancel</button>
+                    <button class="btn-primary" id="createChatBtn" disabled>Create Chat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+    LOADING OVERLAY
+    ============================================ -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- ============================================
+    SCRIPTS
+    ============================================ -->
+    <script type="module" src="chat.js"></script>
+</body>
+  </html>
